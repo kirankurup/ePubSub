@@ -1,0 +1,20 @@
+===============================================================================
+#	Test Cases identified for ePubSub
+===============================================================================
+1. Set amq_server to a bogus server IP Address.
+[Expected Result] Application should stop with "ehostunreach" error.
+
+2. Set amq_server_port to a port where ActiveMQ Server is not listening.
+[Expected Result] Application should stop with "econnrefused" error.
+
+3. Set ePubSub to run as both publisher and subscriber.
+[Expected Result] Application should start both publisher and subscriber as a single application @ the configured pace.
+
+4. Set ePubSub to run instances of each publisher and subscriber as separate entities.
+[Expected Result] Application should start both publisher and subscriber @ the configured pace.
+
+5. In a random window check the output of Publisher and evaluate mps.
+[Expected Result] Publisher should be sending messages @ the configured MPS.
+
+6. In a random window check the output of Subscriber and evaluate mps.
+[Expected Result] Subscriber should be able to perform aggregation function and report the results.

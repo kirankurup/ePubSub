@@ -1,0 +1,9 @@
+-sname ePubSub
+## Use one of the below options if running as publisher only or subscriber only.
+##-sname ePubSub_pub
+##-sname ePubSub_sub
+
+-setcookie ePubSub_cookie
+
++K true
++A30
