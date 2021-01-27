@@ -139,7 +139,7 @@ publish_message_and_sleep(State) ->
   timer:cancel(State#eps_pub_publisher_state.timer_ref),
   % Create the message to be published.
   Msg = integer_to_list(rand:uniform(State#eps_pub_publisher_state.pub_range)),
-  ?LOG_INFO("Sending message...~ts", [Msg]),
+  ?LOG_DEBUG("Sending message...~ts", [Msg]),
   % Send out the message.
   stomp:send(State#eps_pub_publisher_state.conn, State#eps_pub_publisher_state.topic_name, [], Msg),
   TimeInMS = trunc(epsUtils:get_timestamp() / 1000) - Bef,

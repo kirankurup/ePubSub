@@ -18,7 +18,10 @@
 -include("eps_macros.hrl").
 
 %% API
--export([start_link/0, lookup/2]).
+-export([start_link/0,
+  lookup/2,
+  get_sub_pid_for/1,
+  add_sub_pid_for/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -26,7 +29,10 @@
 
 -define(SERVER, ?MODULE).
 
--record(eps_config_state, {conf_data}).
+-record(eps_config_state, {
+  conf_data,                          %% Configuration data.
+  subs_pids                           %% Subscriber PIDs.
+}).
 
 %%%===================================================================
 %%% API
@@ -43,6 +49,19 @@ start_link() ->
 %% @end
 lookup(Key, DefValue) ->
   gen_server:call(?MODULE, {lookup, Key, DefValue}).
+
+%% @doc
+%% Retrieve the subscriber Pid for the given name.
+%%    Returns PID associated with subscriber Name.
+%% @end
+get_sub_pid_for(SubName) ->
+  gen_server:call(?MODULE, {get_sub_pid, SubName}).
+
+%% @doc
+%% Add the SubPID - SubName combination for later usage.
+%% @end
+add_sub_pid_for(SubName, SubPid) ->
+  gen_server:call(?MODULE, {add_sub_pid, SubName, SubPid}).
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -53,7 +72,7 @@ init([]) ->
   process_flag(trap_exit, true),
   Conf = load_conf_data (),
   ?LOG_INFO("All default configuration loaded ~p~n", [Conf]),
-  {ok, #eps_config_state{conf_data = Conf}}.
+  {ok, #eps_config_state{conf_data = Conf, subs_pids = []}}.
 
 %% @private
 %% @doc Handling call messages
@@ -68,6 +87,24 @@ handle_call ({lookup, Key, DefValue}, _From, State = #eps_config_state{}) ->
               DefValue
           end,
   {reply, Reply, State};
+
+%% @doc Handler for retrieving the SubPid from the stored subs_pids list.
+handle_call ({get_sub_pid, SubName}, _From, State = #eps_config_state{}) ->
+  ?LOG_DEBUG ("get_sub_pid for key ~p~n", [SubName]),
+  Reply = case lists:keyfind(SubName, 1, State#eps_config_state.subs_pids) of
+            {SubName, Val} ->
+              {ok, Val};
+            false ->
+              {error, ''}
+          end,
+  {reply, Reply, State};
+
+%% @doc Handler for adding SubPid - SubName to subs_pids list.
+handle_call ({add_sub_pid, SubName, SubPid}, _From, State = #eps_config_state{}) ->
+  ?LOG_DEBUG ("add_sub_pid for key ~p:~p~n", [SubName, SubPid]),
+  NewSubPids = [{SubName, SubPid}] ++ State#eps_config_state.subs_pids,
+  {reply, ok, State#eps_config_state{subs_pids = NewSubPids}};
+
 %% @doc Handle all other call messages.
 handle_call(_Request, _From, State = #eps_config_state{}) ->
   {reply, ok, State}.

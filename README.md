@@ -175,24 +175,31 @@ Run as both Publisher and Subscriber
     +K true
     +A30
 
+Enable Debug log
+-----
+    Modify following lines in sys.config
+
+      {logger_level, info}         ==>  {logger_level, debug},
+
+      level => info,               ==>  level => debug,
 Publisher Output (logs/error.*)
 -----
-    info: Sending message...39
-    info: Sending message...91
-    info: Sending message...3
-    info: Sending message...31
-    info: Sending message...72
-    info: Sending message...98
-    info: Sending message...90
-    info: Sending message...34
+    debug: Sending message...39
+    debug: Sending message...91
+    debug: Sending message...3
+    debug: Sending message...31
+    debug: Sending message...72
+    debug: Sending message...98
+    debug: Sending message...90
+    debug: Sending message...34
 
 
 Subscriber Output (logs/error.*)
 -----
-    info: Incoming messages for subscriber_1 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
-    info: Output from subscriber_1 Aggregated Function(calculate_sum) is: 1929
-    info: Incoming messages for subscriber_2 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
-    info: Output from subscriber_2 Aggregated Function(calculate_median) is: 50.0
+    debug: Incoming messages for subscriber_1 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
+    debug: Output from subscriber_1 Aggregated Function(calculate_sum) is: 1929
+    debug: Incoming messages for subscriber_2 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
+    debug: Output from subscriber_2 Aggregated Function(calculate_median) is: 50.0
 
 ### Future Improvements
 * Run the application in a docker environment.

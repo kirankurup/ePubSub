@@ -13,10 +13,12 @@
 
 -export([start/2, stop/1]).
 
+
 start(_StartType, _StartArgs) ->
     ePubSub_sup:start_link().
 
 stop(_State) ->
+    cowboy:stop_listener(eps_http_listener),
     ok.
 
 %% internal functions

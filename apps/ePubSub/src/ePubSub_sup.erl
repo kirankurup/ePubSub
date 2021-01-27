@@ -102,6 +102,15 @@ init([]) ->
 %%--------------------------------------------------------------------
 start_subscribers() ->
   %% Constants needed to load subscribers.
+  Dispatch = cowboy_router:compile([
+    {'_', [{"/[:sub_name]/[:get_type]", eps_http_handler, []}]}
+  ]),
+
+  {ok, _} = cowboy:start_clear(eps_http_listener,
+    [{port, 8080}],
+    #{env => #{dispatch => Dispatch}}
+  ),
+
   AMQServer = eps_config:lookup(?AMQSERVER, ?DEFAULT_AMQSERVER),
   AMQPort = eps_config:lookup(?AMQSERVER_PORT, ?DEFAULT_AMQSERVER_PORT),
   TopicName = eps_config:lookup(?EPS_TOPIC, ?DEFAULT_EPS_TOPIC),
@@ -109,5 +118,10 @@ start_subscribers() ->
   SubNames = ["subscriber_1", "subscriber_2"],
   AggrFns = [calculate_sum, calculate_median],
   lists:map(fun({SubName, AggrFn}) ->
-    supervisor:start_child(eps_sub_supervisor, [[AMQServer, AMQPort, SubName, TopicName, SleepInterval, AggrFn]]) end,
+    Res = supervisor:start_child(eps_sub_supervisor, [[AMQServer, AMQPort, SubName, TopicName, SleepInterval, AggrFn]]),
+    case Res of
+      {ok, Pid} -> eps_config:add_sub_pid_for(list_to_binary(SubName), Pid);
+      {error, Err} -> ?LOG_ERROR("Error (~p) while creating subscriber process for ~p~n", [Err, SubName])
+    end
+            end,
     lists:zip(SubNames, AggrFns)).

@@ -16,7 +16,9 @@
 -include_lib("kernel/include/logger.hrl").
 -include("eps_defaults.hrl").
 %% API
--export([start_link/1]).
+-export([start_link/1,
+  get_aggr_msg_list/1,
+  get_aggr_result/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -33,6 +35,8 @@
   msg_list,               %% Storage for all the incoming messages to this subscriber.
   pid,                    %% Process Id of the current subscriber.
   aggr_fn,                %% Aggregator Function.
+  agg_msg_list,           %% Messages list on which aggregator function was run recently.
+  aggr_result,            %% Current result of aggregator function.
   sleep_interval,         %% Sleep time before aggregated function need to be run.
   timer_ref               %% Timer Reference
 }).
@@ -44,6 +48,20 @@
 %% @doc Spawns the server
 start_link(Args) ->
   gen_server:start_link(?MODULE, Args, []).
+
+%% @doc
+%%  Retrieves the Message list on which aggregator function was run recently
+%%  Returns list.
+%% @end
+get_aggr_msg_list(Pid) ->
+  gen_server:call(Pid, retrieve_aggr_msg_list).
+
+%% @doc
+%%  Retrieves the aggregator function result.
+%%  Returns integer / float result.
+%% @end
+get_aggr_result(Pid) ->
+  gen_server:call(Pid, retrieve_aggr_result).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -58,11 +76,21 @@ init([AMQServer, AMQPort, SubName, TopicName, SleepInterval, AggrFn]) ->
   ?LOG_INFO("Starting Subscriber ~p with sleep interval ~p... Connecting to ~s:~p, ~n",
     [SubName, SleepInterval, AMQServer, AMQPort]),
   {ok, #eps_sub_subscriber_state{hostname = AMQServer, port = AMQPort, sub_name = SubName,
-    topic_name = TopicName, conn = '', msg_list = [], pid = Pid,
-    aggr_fn = AggrFn, sleep_interval = SleepInterval, timer_ref = ''}}.
+    topic_name = TopicName, conn = '', msg_list = [], pid = Pid, aggr_fn = AggrFn,
+    agg_msg_list = [], aggr_result = '', sleep_interval = SleepInterval, timer_ref = ''}}.
 
 %% @private
 %% @doc Handling call messages
+
+%% @doc Handler for retrieving aggr_msg_list
+handle_call(retrieve_aggr_msg_list, _From, State = #eps_sub_subscriber_state{}) ->
+  {reply, State#eps_sub_subscriber_state.agg_msg_list, State};
+
+%% @doc Handler for retrieving aggr_result
+handle_call(retrieve_aggr_result, _From, State = #eps_sub_subscriber_state{}) ->
+  {reply, State#eps_sub_subscriber_state.aggr_result, State};
+
+%% @doc Handling all other call messages
 handle_call(_Request, _From, State = #eps_sub_subscriber_state{}) ->
   {reply, ok, State}.
 
@@ -176,9 +204,9 @@ handle_messages_and_sleep(State) ->
   timer:cancel(State#eps_sub_subscriber_state.timer_ref),
   % Apply aggregator function as configured.
   Agg = apply(epsUtils, State#eps_sub_subscriber_state.aggr_fn, [State#eps_sub_subscriber_state.msg_list]),
-  ?LOG_INFO("Incoming messages for ~s over the subscription time: ~p ",
+  ?LOG_DEBUG("Incoming messages for ~s over the subscription time: ~p ",
     [State#eps_sub_subscriber_state.sub_name, State#eps_sub_subscriber_state.msg_list]),
-  ?LOG_INFO("Output from ~s Aggregated Function(~p) is: ~p", [State#eps_sub_subscriber_state.sub_name,
+  ?LOG_DEBUG("Output from ~s Aggregated Function(~p) is: ~p", [State#eps_sub_subscriber_state.sub_name,
     State#eps_sub_subscriber_state.aggr_fn, Agg]),
   TimeInMS = trunc(epsUtils:get_timestamp() / 1000) - Bef,
   % Recalculate the new sleep time based on the time spend in aggregator function.
@@ -189,7 +217,8 @@ handle_messages_and_sleep(State) ->
                {ok, TRef} -> TRef;
                {error, _} -> ''
              end,
-  State#eps_sub_subscriber_state{timer_ref = TimerRef, msg_list = []}.
+  LastMsgList = State#eps_sub_subscriber_state.msg_list,
+  State#eps_sub_subscriber_state{timer_ref = TimerRef, msg_list = [], agg_msg_list = LastMsgList, aggr_result = Agg}.
 
 %% @private
 %%--------------------------------------------------------------------

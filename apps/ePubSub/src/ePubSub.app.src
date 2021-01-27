@@ -5,7 +5,9 @@
   {mod, {ePubSub_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    jsone,
+    cowboy
    ]},
   {env,[]},
   {modules, []},
