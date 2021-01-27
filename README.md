@@ -195,3 +195,5 @@ Subscriber Output (logs/error.*)
     info: Output from subscriber_2 Aggregated Function(calculate_median) is: 50.0
 
 ### Future Improvements
+* Run the application in a docker environment.
+* Create Restful APIs to retrieve the subscriber aggregator results.
