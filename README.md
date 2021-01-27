@@ -14,10 +14,13 @@ Erlang Publisher Subscriber using ActiveMQ Broker.
   
 * Subscribers will listen for incoming messages on the topic and will perform aggregate functions at regular
 intervals.
+  
+* HTTP APIs (using cowboy) are implemented for retrieval of Aggregate function results and for the list of numbers on 
+  which the function executed. 
 
 ### <u> Dependency </u>
 * stomp client written in erlang (placed under epsUtils/stomp.erl) is used for communicating with ActiveMQ server. 
-  The original source file has been patched for usage with ePubSub. 
+  The original opensource file has been patched for usage with ePubSub. 
 
 Environment.
 -----
@@ -175,6 +178,34 @@ Run as both Publisher and Subscriber
     +K true
     +A30
 
+Supported HTTP APIs
+-----
+* <b>Endpoint URL</b>: http://<host_where_subscriber_runs>:8080/<subscriber_name>/<get_type>
+* <b>Accept Type</b>: "application/json"
+* Valid Values for <b>subscriber_name</b>: "subscriber_1" or "subscriber_2"
+* Valid Values for <b>get_type</b>: "aggr_result" (for retrieving aggregate result) 
+  or "aggr_list" (for retrieving the list on which aggregate function acted upon.)
+  
+* <b>NOTE:</b> HTTP APIs will be active only on when the run_mode is either "both" / "subscriber".
+
+#### Samples
+    $ curl -H "Accept: application/json" http://localhost:8080/subscriber_1/aggr_result
+    2004
+
+    $ curl -H "Accept: application/json" http://localhost:8080/subscriber_1/aggr_list
+    [87,36,76,72,55,20,17,64,66,22,87,38,7,63,84,12,47,61,89,41,44,37,36,59,52,80,94,53,97,91,22,16,70,60,87,32,20,60,
+     73,20,23,77,5,90,14,15,3,45,25,44,6,63,84,6,66,88,57,58,44,17,43,72,61,88,34,48,52,63,32,63,24,53,76,25,18,13,95,57,44,9,85,32,51,74,3,62,96,95,80,43,89,90,68,35,86,78,77,24,90]
+
+    $ curl -H "Accept: application/json" http://localhost:8080/subscriber_2/aggr_list
+    [83,17,82,6,49,42,77,17,75,98,25,22,41,58,10,21,85,86,71,30,50,11,80,90,48,24,56,29,95,29,64,16,71,91,6,40,54,82,59,
+     41,11,42,87,79,56,81,8,64,38,57,97,98,31,11,91,19,82,35,57,94,25,4,90,48,77,40,17,25,82,79,52,48,65,86,9,81,36,10,68,75,8,79,11,16,68,68,41,92,42,35,30,8,40,63,3,92,2,73,74]
+
+    $ curl -H "Accept: application/json" http://localhost:8080/subscriber_2/aggr_result
+    4.80000000000000000000e+01
+
+    $ curl -H "Accept: application/json" http://localhost:8080/subscriber_3/aggr_result
+    "This subscriber is not present"
+
 Enable Debug log
 -----
     Modify following lines in sys.config
@@ -182,8 +213,7 @@ Enable Debug log
       {logger_level, info}         ==>  {logger_level, debug},
 
       level => info,               ==>  level => debug,
-Publisher Output (logs/error.*)
------
+#### Publisher Output (logs/error.*)
     debug: Sending message...39
     debug: Sending message...91
     debug: Sending message...3
@@ -194,13 +224,13 @@ Publisher Output (logs/error.*)
     debug: Sending message...34
 
 
-Subscriber Output (logs/error.*)
------
+#### Subscriber Output (logs/error.*)
     debug: Incoming messages for subscriber_1 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
     debug: Output from subscriber_1 Aggregated Function(calculate_sum) is: 1929
     debug: Incoming messages for subscriber_2 over the subscription time: [33,40,93,38,81,6,50,51,71,71,2,52,41,87,50,49,25,96,52,81,90,76,43,60,74,20,78,7,2,38,48,79,73,54,35,41,11,29,2]
     debug: Output from subscriber_2 Aggregated Function(calculate_median) is: 50.0
 
-### Future Improvements
+Future Improvements
+-----
 * Run the application in a docker environment.
-* Create Restful APIs to retrieve the subscriber aggregator results.
+* Update Restful APIs to support text, html formats.
